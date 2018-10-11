@@ -70,13 +70,14 @@ Can be downloaded from [here](https://github.com/ibest/HTStream). Fast C++ imple
 
 **1\.** Let's run the first step of our HTStream preprocessing pipeline, which is always to gather basic stats on the read files. For now, we're only going to run one sample through the pipeline.
 
-**1a\.** So let's first take a small subsample of reads, just so our trial run through the pipeline goes really quickly.
+**1a\.** So let's first download a small subsample of reads, just so our trial run through the pipeline goes really quickly.
 
+    mkdir ~/rnaseq_example
     cd ~/rnaseq_example
     mkdir HTS_testing
     cd HTS_testing
-    zcat ../00-RawData/C61/C61_S67_L006_R1_001.fastq.gz | head -400000 | gzip > C61.subset_R1.fastq.gz
-    zcat ../00-RawData/C61/C61_S67_L006_R2_001.fastq.gz | head -400000 | gzip > C61.subset_R2.fastq.gz
+    wget https://github.com/ucdavis-bioinformatics-training/HTStream_Training/blob/master/C61.subset_R1.fastq.gz?raw=true -O C61.subset_R1.fastq.gz    zcat ../00-RawData/C61/C61_S67_L006_R2_001.fastq.gz | head -400000 | gzip > C61.subset_R2.fastq.gz
+    wget https://github.com/ucdavis-bioinformatics-training/HTStream_Training/blob/master/C61.subset_R2.fastq.gz?raw=true -O C61.subset_R2.fastq.gz
     ls
 
 So we zcat (uncompress and send to screen), pipe to head (param -400000) then pipe to gzip to recompress and name our files subset.
@@ -86,7 +87,7 @@ So we zcat (uncompress and send to screen), pipe to head (param -400000) then pi
 **1b\.** Now we'll run our first preprocessing step ... hts_Stats, first loading the module and then looking at help.
 
     cd ~/rnaseq_example/HTS_testing
-    module load htstream/0.3.1
+    module load htstream
     hts_Stats --help
 
 ```
@@ -482,24 +483,7 @@ Note the patterns:
 
 ---
 
-**6\.** We can now run the preprocessing routine across all samples on the real data using a SLURM script, [hts_preproc.slurm](./hts_preproc.slurm), that we should take a look at now.
-
-    cd ~/rnaseq_example  # We'll run this from the main directory
-    cp /share/biocore/workshops/2018_June_RNAseq/hts_preproc.slurm .
-    cat hts_preproc.slurm
-    mkdir slurmout
-
-After looking at the script, lets make a slurmout directory for the output to go and let's run it. First we'll need to produce a list of samples for the script to work on.
-
-    sbatch hts_preproc.slurm  # moment of truth!
-
-We can watch the progress of our task array using the 'squeue' command. Takes about 30 minutes to process each sample.
-
-    squeue -u class42  # use your actual username, no brackets
-
----
-
-**7.** Preprocessing statistics as QA/QC.
+**6.** Preprocessing statistics as QA/QC.
 
 Beyond generating "better" data for downstream analysis, cleaning statistics also give you an idea as to the original quality and complexity of the sample, library generation, and sequencing quality.
 
@@ -510,30 +494,6 @@ I’ve found it best to perform QA/QC on both the run as a whole (poor samples c
 Reports such as Basespace for Illumina, are great ways to evaluate the run as a whole, the sequencing provider usually does this for you.
 PCA/MDS plots of the preprocessing summary are a great way to look for technical bias across your experiment. Poor quality samples often appear as outliers on the MDS plot and can ethically be removed due to identified technical issues.
 
-**8\.** Let's make sure that all jobs completed successfully.
-
-Lets first check all the "htstream_%\*.out" and "htstream_%\*.err" files:
-
-    cd ~/rnaseq_example
-    cat slurmout/htstream_*.out
-
-Look through the output and make sure you don't see any errors. Now do the same for the err files:
-
-    cat slurmout/htstream_*.err
-
-Also, check the output files. First check the number of forward and reverse output files (should be 24 each):
-
-    cd 01-HTS_Preproc
-    ls */*R1* | wc -l
-    ls */*R2* | wc -l
-
-Check the sizes of the files as well. Make sure there are no zero or near-zero size files and also make sure that the size of the files are in the same ballpark as each other:
-
-    ls -lh *
-
-If, for some reason, your jobs did not finish or something else went wrong, please let one of us know and we will help.
-
----
 
 **9.** Let's take a look at the differences between the input and output files. First look at the input file:
 
@@ -555,7 +515,7 @@ If you scroll through the data (using the spacebar), you will see that some of t
 I've created a small R script to read in each json file, pull out some relevant stats and write out a table for all samples.
 
     cd ~/rnaseq_example  # We'll run this from the main directory
-    cp /share/biocore/workshops/2018_June_RNAseq/summarize_stats.R .
+    cp /share/biocore/workshops/2018_June_RNAseq/summarize_stats. R .
 
     R CMD BATCH summarize_stats.R
     cat summary_hts.txt
